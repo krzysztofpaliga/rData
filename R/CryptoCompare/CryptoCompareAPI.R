@@ -17,5 +17,9 @@ initCryptoCompareAPI <- function() {
     return(rAPI$api$generic(urlEndpointPart = "histohour"))
   }
 
+  cryptoCompareAPI$histoDay <- function(fsym = "ETH", tsym = "BTC", toTs = NULL, limit = 2000, e = NULL) {
+    return(rAPI$api$generic(urlEndpointPart = "histoday"))
+  }
+
   return(cryptoCompareAPI)
 }

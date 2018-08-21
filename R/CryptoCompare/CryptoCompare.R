@@ -1,19 +1,19 @@
 initCryptoCompare <- function() {
   require(tidyverse)
 
-  cryptoCompareAPI <- initCryptoCompareAPI()
-
   cryptoCompare <- list()
 
+  cryptoCompare$API <- initCryptoCompareAPI()
+
   cryptoCompare$getCoins <- function() {
-    response <- cryptoCompareAPI$coinList()
+    response <- cryptoCompare$API$coinList()
     df <- do.call("rbind.fill", lapply(response$content$parsed$Data, function(x) as.data.frame(x, stringsAsFactors = FALSE)))
     return (df)
   }
 
   cryptoCompare$getMarkets <- function(exchangesFilter = NULL, coinsFilter = NULL, currenciesFilter = NULL) {
     df <- data.frame(exchange=character(), coin=character(), currency=character(), stringsAsFactors = FALSE)
-    response <- cryptoCompareAPI$allExchanges()
+    response <- cryptoCompare$API$allExchanges()
     exchanges <- names(response$content$parsed)
     for(i in 1:length(exchanges)) {
       exchange = exchanges[i]
@@ -38,12 +38,12 @@ initCryptoCompare <- function() {
     return (df)
   }
 
-  cryptoCompare$getAllHistoHour <- function(exchange = NULL, coin = "ETH", currency = "BTC") {
-    newestResponse <- cryptoCompareAPI$histoHour(e = exchange, fsym = coin, tsym = currency)
+  cryptoCompare$getAllHisto <- function(histoFunction, exchange = NULL, coin = "ETH", currency = "BTC") {
+    newestResponse <- histoFunction(e = exchange, fsym = coin, tsym = currency)
     df <- newestResponse$content$parsed$Data
     while (TRUE) {
       nextToTs = min(df$time)-1
-      nextResponse <- cryptoCompareAPI$histoHour(e = exchange, fsym = coin, tsym = currency, toTs = nextToTs)
+      nextResponse <- cryptoCompare$API$histoHour(e = exchange, fsym = coin, tsym = currency, toTs = nextToTs)
       if (all(nextResponse$content$parsed$Data$close == 0)) {
         break
       } else {
@@ -64,18 +64,18 @@ initCryptoCompare <- function() {
     return (df)
   }
 
-  cryptoCompare$getAllCoinsHistoHour <- function(exchange = "Cryptopia", currency = "BTC", partialCallback = NULL) {
+  cryptoCompare$getAllCoinsHisto <- function(histoFunction, exchange = "Cryptopia", currency = "BTC", partialCallback = NULL) {
     markets <- cryptoCompare$getMarkets(exchangesFilter = c(exchange), currenciesFilter = c(currency))
     markets %>%
       arrange(coin) %>%
       select(coin) ->
       allCoins
-    df <- cryptoCompare$getAllHistoHour(exchange = exchange, coin = allCoins[1,], currency = currency)
+    df <- cryptoCompare$getAllHisto(histoFunction = histoFunction, exchange = exchange, coin = allCoins[1,], currency = currency)
     if (!is.null(partialCallback)) {
       partialCallback(df)
     }
     for (coin in allCoins[-1,]) {
-      coinDf <- cryptoCompare$getAllHistoHour(exchange = exchange, coin = coin, currency = currency)
+      coinDf <- cryptoCompare$getAllHisto(histoFunction = histoFunction, exchange = exchange, coin = coin, currency = currency)
       if (!is.null(partialCallback)) {
         partialCallback(coinDf)
       }
