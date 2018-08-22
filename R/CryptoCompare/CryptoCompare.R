@@ -43,6 +43,9 @@ initCryptoCompare <- function() {
     df <- newestResponse$content$parsed$Data
     while (TRUE) {
       nextToTs = min(df$time)-1
+      if (!is.finite(nextToTs)) {
+        break
+      }
       nextResponse <- cryptoCompare$API$histoHour(e = exchange, fsym = coin, tsym = currency, toTs = nextToTs)
       if (all(nextResponse$content$parsed$Data$close == 0)) {
         break
@@ -52,6 +55,9 @@ initCryptoCompare <- function() {
       }
     }
 
+    if(class(df) != 'data.frame') {
+      print(df)
+    }
     df %>%
       filter(close != 0 && high != 0 && low != 0 && open != 0) ->
       df
@@ -82,6 +88,7 @@ initCryptoCompare <- function() {
       if (!is.null(coinDf)) {
         df <- rbind(df, coinDf)
       }
+      Sys.sleep(0.5)
     }
 
     return (df)
