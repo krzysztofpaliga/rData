@@ -2,6 +2,7 @@ require(rChange)
 require(rQuant)
 require(plyr)
 require(rAPI)
+require(odbc)
 kucoinAPI <- initKucoinAPI()
 kucoin <- initKucoin(kucoinAPI)
 
@@ -20,6 +21,9 @@ data <- DBI::dbWriteTable(con, "cryptocompare_coinList", asFrame)
 asFrame$Nam
 
 cryptoCompare <- initCryptoCompare()
-res <- cryptoCompare$getAllCoinsHisto(cryptoCompare$API$histoDay, exchange="Cryptopia", currency="BTC")
+response2 <- cryptoCompare$getAllHisto(cryptoCompare$API$histoDay, exchange="Cryptopia", currency="BTC")
+response3 <- cryptoCompare$getAllCoinsHisto(cryptoCompare$API$histoDay, exchange="Cryptopia", currency="BTC")
+con <- DBI::dbConnect(odbc::odbc(), "cryptonoi.se")
+data <- DBI::dbWriteTable(con, "cryptocompare_histoDay", response3)
 res <- cryptoCompare$getCoins()
 markets <- cryptoCompare$getMarkets(exchangesFilter = c("Cryptopia"), currenciesFilter = c("BTC"))

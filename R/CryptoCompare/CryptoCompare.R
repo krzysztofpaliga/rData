@@ -55,18 +55,15 @@ initCryptoCompare <- function() {
       }
     }
 
-    if(class(df) != 'data.frame') {
-      print(df)
-    }
-    df %>%
-      filter(close != 0 && high != 0 && low != 0 && open != 0) ->
-      df
+    df <- df[ rowSums(df[,2:7])!=0, ]
 
     if (nrow(df) == 0) {
-      return (NULL)
+      print("zero rows")
+      return (df)
     }
     df$exchange <- exchange
     df$coin <- coin
+    df$currency <- currency
     return (df)
   }
 
