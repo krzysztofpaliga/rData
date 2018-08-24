@@ -4,6 +4,7 @@ initCryptoCompareAPI <- function() {
   rAPI <- init_rAPI(baseUrl = "https://min-api.cryptocompare.com/data/")
 
   cryptoCompareAPI <- list()
+  cryptoCompareAPI$API <- rAPI
 
   cryptoCompareAPI$coinList <- function() {
     return (rAPI$api$generic(urlEndpointPart = "all/coinlist"))
