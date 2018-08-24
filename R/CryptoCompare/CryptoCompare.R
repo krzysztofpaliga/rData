@@ -1,6 +1,6 @@
 initCryptoCompare <- function() {
   require(tidyverse)
-
+  source("R/CryptoCompare/CryptoCompareAPI.R")
   cryptoCompare <- list()
 
   cryptoCompare$API <- initCryptoCompareAPI()
@@ -46,7 +46,7 @@ initCryptoCompare <- function() {
       if (!is.finite(nextToTs)) {
         break
       }
-      nextResponse <- cryptoCompare$API$histoHour(e = exchange, fsym = coin, tsym = currency, toTs = nextToTs)
+      nextResponse <- histoFunction(e = exchange, fsym = coin, tsym = currency, toTs = nextToTs)
       if (all(nextResponse$content$parsed$Data$close == 0)) {
         break
       } else {
