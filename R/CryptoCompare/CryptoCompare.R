@@ -1,6 +1,5 @@
 initCryptoCompare <- function() {
   require(tidyverse)
-  source("R/CryptoCompare/CryptoCompareAPI.R")
   cryptoCompare <- list()
 
   cryptoCompare$API <- initCryptoCompareAPI()
