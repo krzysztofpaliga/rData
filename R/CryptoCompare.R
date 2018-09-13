@@ -1,5 +1,7 @@
 initCryptoCompare <- function() {
   require(tidyverse)
+  require(anytime)
+
   cryptoCompare <- list()
 
   cryptoCompare$API <- initCryptoCompareAPI()
@@ -50,8 +52,10 @@ initCryptoCompare <- function() {
         break
       } else {
         nextDf <- nextResponse$content$parsed$Data
+        print(nextDf)
         df <- rbind(df, nextDf)
       }
+      Sys.sleep(1)
     }
 
     df <- df[ rowSums(df[,2:7])!=0, ]
@@ -64,6 +68,64 @@ initCryptoCompare <- function() {
     df$coin <- coin
     df$currency <- currency
     return (df)
+  }
+
+  #TODO przelec przez day, hour, minute(?)
+  cryptoCompare$getNewestHisto <- function(histoFunc = cryptoCompare$API$histoDay, exchange = "Cryptopia", coin = "ETH", currency = "BTC", exclusiveFrom = NULL) {
+    if(is.null(exclusiveFrom)) {
+      print("exclusiveFrom parameter cant be null")
+      return (NULL)
+    }
+
+
+    newestResponse <- histoFunc(e = exchange, fsym = coin, tsym = currency)
+    df <- newestResponse$content$parsed$Data
+    df %>% select(time) %>% min() %>% anytime() -> minDate
+    exclusiveFromDate <- anytime(exclusiveFrom)
+    if (minDate > exclusiveFromDate) {
+      while (TRUE) {
+        nextToTs = min(df$time)-1
+        if (!is.finite(nextToTs)) {
+          break
+        }
+        nextResponse <- histoFunc(e = exchange, fsym = coin, tsym = currency, toTs = nextToTs)
+        nextDf <- nextResponse$content$parsed$Data
+        df %>% select(time) %>% min() %>% anytime() -> minDate
+        if (minDate <= exclusiveFromDate) {
+          break
+        } else {
+          print(nextDf)
+          df <- rbind(df, nextDf)
+        }
+        Sys.sleep(1)
+      }
+    }
+    df %>% filter(time > exclusiveFromDate) -> df
+    return (df)
+  }
+
+  cryptoCompare$refreshCoinInDb <- function(odbcName = "cryptonoi.se", dbName = "cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay,  coin = "ETH") {
+    connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+    data <- tbl(connection, dbName)
+    coinName <- coin
+    data %>% filter(coin == coinName) %>% collect() -> coinData
+    coinData %>% group_by(exchange, currency) %>% filter(time == max(time)) -> coinNewestRows
+    for (i in 1:nrow(coinNewestRows)) {
+      row = coinNewestRows[i,]
+      cryptoCompare$refreshCoinInDbForExchangeAndCurrency(odbcName = odbcName,
+                                                          dbName = dbName,
+                                                          histoFunc = histoFunc,
+                                                          exchange=row$exchange,
+                                                          currency=row$currency,
+                                                          coin=coin,
+                                                          exclusiveFrom = row$time)
+    }
+  }
+
+  cryptoCompare$refreshCoinInDbForExchangeAndCurrency <- function(odbcName, dbName, histoFunc, exchange, currency, coin, exclusiveFrom) {
+    newestHisto <- cryptoCompare$getNewestHisto(exchange=exchange, currency=currency, histoFunc=histoFunc, coin=coin, exclusiveFrom=exclusiveFrom)
+    connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+    DBI::dbWriteTable(connection, dbName, newestHisto, append = TRUE)
   }
 
   cryptoCompare$getAllCoinsHisto <- function(histoFunction, exchange = "Cryptopia", currency = "BTC", partialCallback = NULL) {
