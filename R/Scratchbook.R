@@ -21,6 +21,7 @@
 # asFrame$Nam
 #
 # cryptoCompare <- initCryptoCompare()
+# cryptoCompare$initDb()
 # cryptoCompare$refreshDb()
 # cryptoCompare$refreshCoinInDb(coin="ETH")
 # response2 <- cryptoCompare$getAllHisto(cryptoCompare$API$histoDay, exchange="Cryptopia", currency="BTC")
