@@ -104,11 +104,23 @@ initCryptoCompare <- function() {
     return (df)
   }
 
+  cryptoCompare$refreshDb <- function(odbcName = "cryptonoi.se", dbName = "cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay) {
+    connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+    data <- tbl(connection, dbName)
+    data %>% distinct(coin) %>% collect() -> coins
+    DBI::dbDisconnect(connection)
+    for (i in 2:nrow(coins)) {
+      coin <- coins[i,]$coin
+      cryptoCompare$refreshCoinInDb(odbcName = odbcName, dbName = dbName, histoFunc = histoFunc, coin = coin)
+    }
+  }
+
   cryptoCompare$refreshCoinInDb <- function(odbcName = "cryptonoi.se", dbName = "cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay,  coin = "ETH") {
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     data <- tbl(connection, dbName)
     coinName <- coin
     data %>% filter(coin == coinName) %>% collect() -> coinData
+    DBI::dbDisconnect(connection)
     coinData %>% group_by(exchange, currency) %>% filter(time == max(time)) -> coinNewestRows
     for (i in 1:nrow(coinNewestRows)) {
       row = coinNewestRows[i,]
@@ -124,8 +136,14 @@ initCryptoCompare <- function() {
 
   cryptoCompare$refreshCoinInDbForExchangeAndCurrency <- function(odbcName, dbName, histoFunc, exchange, currency, coin, exclusiveFrom) {
     newestHisto <- cryptoCompare$getNewestHisto(exchange=exchange, currency=currency, histoFunc=histoFunc, coin=coin, exclusiveFrom=exclusiveFrom)
-    connection <- DBI::dbConnect(odbc::odbc(), odbcName)
-    DBI::dbWriteTable(connection, dbName, newestHisto, append = TRUE)
+    if (nrow(newestHisto) > 0) {
+      newestHisto$exchange <- exchange
+      newestHisto$coin <- coin
+      newestHisto$currency <- currency
+      connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+      DBI::dbWriteTable(connection, dbName, newestHisto, append = TRUE)
+      DBI::dbDisconnect(connection)
+    }
   }
 
   cryptoCompare$getAllCoinsHisto <- function(histoFunction, exchange = "Cryptopia", currency = "BTC", partialCallback = NULL) {
