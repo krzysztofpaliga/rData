@@ -111,7 +111,7 @@ initCryptoCompare <- function() {
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     data <- tbl(connection, dbName)
     #data %>% distinct(coin) %>% collect() %>% filter(coin %in% markets$coin) -> coins
-    filter(coin %in% markets$coin) -> coins
+    filter(markets, coin %in% markets$coin) -> coins
     DBI::dbDisconnect(connection)
     for (i in 1:nrow(coins)) {
       coin <- coins[i,]$coin
