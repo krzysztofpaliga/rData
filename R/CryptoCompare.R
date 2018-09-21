@@ -1,6 +1,7 @@
 initCryptoCompare <- function() {
   require(tidyverse)
   require(anytime)
+  require(plyr)
 
   cryptoCompare <- list()
 
@@ -103,6 +104,7 @@ initCryptoCompare <- function() {
     df %>% filter(time > exclusiveFromDate) -> df
     return (df)
   }
+
 
   cryptoCompare$refreshCoinInDb <- function(odbcName = "cryptonoi.se", dbName = "cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay,  coin = "ETH") {
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)

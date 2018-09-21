@@ -28,3 +28,21 @@ con <- DBI::dbConnect(odbc::odbc(), "cryptonoi.se")
 data <- DBI::dbWriteTable(con, "cryptocompare_histoDay", response3)
 res <- cryptoCompare$getCoins()
 markets <- cryptoCompare$getMarkets(exchangesFilter = c("Cryptopia"), currenciesFilter = c("BTC"))
+
+library(websocket)
+ws <- WebSocket$new("wss://streamer.cryptocompare.com/", autoConnect = FALSE)
+ws$onOpen(function(event) {
+  cat("Connection opened\n")
+})
+ws$onMessage(function(event) {
+  cat("Client got msg: ", event$data, "\n")
+})
+ws$onClose(function(event) {
+  cat("Client disconnected with code ", event$code,
+      " and reason ", event$reason, "\n", sep = "")
+})
+ws$onError(function(event) {
+  cat("Client failed to connect: ", event$message, "\n")
+})
+ws$send("hello")
+ws$connect()
