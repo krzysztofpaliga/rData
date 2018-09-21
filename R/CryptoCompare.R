@@ -105,12 +105,25 @@ initCryptoCompare <- function() {
     return (df)
   }
 
+  cryptoCompare$refreshDb <- function(odbcName = "cryptonoi.se", dbName = "cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay) {
+    #TODO get rid of hardcoded values
+    markets <- cryptoCompare$getMarkets(exchangesFilter = c("Cryptopia"), currenciesFilter = c("BTC"))
+    connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+    data <- tbl(connection, dbName)
+    data %>% distinct(coin) %>% collect() %>% filter(coin %in% markets$coin) -> coins
+    DBI::dbDisconnect(connection)
+    for (i in 1:nrow(coins)) {
+      coin <- coins[i,]$coin
+      cryptoCompare$refreshCoinInDb(odbcName = odbcName, dbName = dbName, histoFunc = histoFunc, coin = coin)
+    }
+  }
 
   cryptoCompare$refreshCoinInDb <- function(odbcName = "cryptonoi.se", dbName = "cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay,  coin = "ETH") {
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     data <- tbl(connection, dbName)
     coinName <- coin
     data %>% filter(coin == coinName) %>% collect() -> coinData
+    DBI::dbDisconnect(connection)
     coinData %>% group_by(exchange, currency) %>% filter(time == max(time)) -> coinNewestRows
     for (i in 1:nrow(coinNewestRows)) {
       row = coinNewestRows[i,]
@@ -126,8 +139,14 @@ initCryptoCompare <- function() {
 
   cryptoCompare$refreshCoinInDbForExchangeAndCurrency <- function(odbcName, dbName, histoFunc, exchange, currency, coin, exclusiveFrom) {
     newestHisto <- cryptoCompare$getNewestHisto(exchange=exchange, currency=currency, histoFunc=histoFunc, coin=coin, exclusiveFrom=exclusiveFrom)
-    connection <- DBI::dbConnect(odbc::odbc(), odbcName)
-    DBI::dbWriteTable(connection, dbName, newestHisto, append = TRUE)
+    if (nrow(newestHisto) > 0) {
+      newestHisto$exchange <- exchange
+      newestHisto$coin <- coin
+      newestHisto$currency <- currency
+      connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+      DBI::dbWriteTable(connection, dbName, newestHisto, append = TRUE)
+      DBI::dbDisconnect(connection)
+    }
   }
 
   cryptoCompare$getAllCoinsHisto <- function(histoFunction, exchange = "Cryptopia", currency = "BTC", partialCallback = NULL) {
@@ -152,6 +171,19 @@ initCryptoCompare <- function() {
     }
 
     return (df)
+  }
+
+  cryptoCompare$initDb <- function(odbcName="cryptonoi.se", dbName="cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay) {
+    connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+    print("Dropping db")
+    DBI::dbSendQuery(connection, paste0("DROP TABLE IF EXISTS ", dbName))
+    print("Fetching data")
+
+    # handle those harcoded values
+    response <- cryptoCompare$getAllCoinsHisto(histoFunc = histoFunc, exchange="Cryptopia", currency="BTC")
+    print("Writing data to db")
+    con <- DBI::dbConnect(odbc::odbc(), odbcName)
+    data <- DBI::dbWriteTable(con, dbName, response)
   }
 
   return (cryptoCompare)
