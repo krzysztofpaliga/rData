@@ -53,7 +53,6 @@ initCryptoCompare <- function() {
         break
       } else {
         nextDf <- nextResponse$content$parsed$Data
-        print(nextDf)
         df <- rbind(df, nextDf)
       }
       Sys.sleep(1)
@@ -95,7 +94,6 @@ initCryptoCompare <- function() {
         if (minDate <= exclusiveFromDate) {
           break
         } else {
-          print(nextDf)
           df <- rbind(df, nextDf)
         }
         Sys.sleep(1)
@@ -112,29 +110,45 @@ initCryptoCompare <- function() {
     data <- tbl(connection, dbName)
     #data %>% distinct(coin) %>% collect() %>% filter(coin %in% markets$coin) -> coins
     filter(markets, coin %in% markets$coin) %>% arrange(coin) -> coins
-    DBI::dbDisconnect(connection)
     for (i in 1:nrow(coins)) {
       coin <- coins[i,]$coin
-      cryptoCompare$refreshCoinInDb(odbcName = odbcName, dbName = dbName, histoFunc = histoFunc, coin = coin)
+      cryptoCompare$refreshCoinInDb(odbcName = odbcName, dbName = dbName, histoFunc = histoFunc, coin = coin, exchangesFilter = c("Cryptopia"), currenciesFilter = c("BTC"))
     }
   }
 
-  cryptoCompare$refreshCoinInDb <- function(odbcName = "cryptonoi.se", dbName = "cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay,  coin = "ETH") {
+  cryptoCompare$refreshCoinInDb <- function(odbcName = "cryptonoi.se",
+                                            dbName = "cryptocompare_histoDay",
+                                            histoFunc = cryptoCompare$API$histoDay,
+                                            coin = "ETH",
+                                            exchangesFilter = c("Cryptopia"),
+                                            currenciesFilter = c("BTC")) {
+    coinName <- coin
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     data <- tbl(connection, dbName)
-    coinName <- coin
-    data %>% filter(coin == coinName) %>% collect() -> coinData
-    DBI::dbDisconnect(connection)
-    coinData %>% group_by(exchange, currency) %>% filter(time == max(time)) -> coinNewestRows
-    for (i in 1:nrow(coinNewestRows)) {
-      row = coinNewestRows[i,]
-      cryptoCompare$refreshCoinInDbForExchangeAndCurrency(odbcName = odbcName,
-                                                          dbName = dbName,
-                                                          histoFunc = histoFunc,
-                                                          exchange=row$exchange,
-                                                          currency=row$currency,
-                                                          coin=coin,
-                                                          exclusiveFrom = row$time)
+    data %>% filter(coin == coinName & exchange %in% exchangesFilter & currency %in% currenciesFilter) %>% collect() -> coinData
+    if (nrow(coinData) == 0) {
+      for (exchangeIndex in 1:length(exchangesFilter)) {
+        exchange <- exchangesFilter[exchangeIndex]
+        for (currencyIndex in 1:length(currenciesFilter)) {
+          currency <- currenciesFilter[currencyIndex]
+          allData <- cryptoCompare$getAllHisto(histoFunction = histoFunc, exchange = exchange, coin = coin, currency = currency)
+          data <- DBI::dbWriteTable(connection, dbName, allData, append=TRUE)
+        }
+      }
+      DBI::dbDisconnect(connection)
+    } else {
+      DBI::dbDisconnect(connection)
+      coinData %>% group_by(exchange, currency) %>% filter(time == max(time)) -> coinNewestRows
+      for (i in 1:nrow(coinNewestRows)) {
+        row = coinNewestRows[i,]
+        cryptoCompare$refreshCoinInDbForExchangeAndCurrency(odbcName = odbcName,
+                                                            dbName = dbName,
+                                                            histoFunc = histoFunc,
+                                                            exchange=row$exchange,
+                                                            currency=row$currency,
+                                                            coin=coin,
+                                                            exclusiveFrom = row$time)
+      }
     }
   }
 

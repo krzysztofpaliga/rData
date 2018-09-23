@@ -80,5 +80,5 @@
 # data <- DBI::dbWriteTable(con, "cryptocompare_histoDay", response3)
 # res <- cryptoCompare$getCoins()
 # markets <- cryptoCompare$getMarkets(exchangesFilter = c("Cryptopia"), currenciesFilter = c("BTC"))
-#rData <- init_rData()
-# rData$cryptoCompare$refreshDb()
+rData <- init_rData()
+rData$cryptoCompare$refreshDb()
