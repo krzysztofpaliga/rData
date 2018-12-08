@@ -69,9 +69,9 @@
 # data <- DBI::dbWriteTable(con, "cryptocompare_coinList", asFrame)
 # asFrame$Nam
 #
-rData <- init_rData()
-rData$cryptoCompare$refreshDb()
-rData$cryptoCompare$initDb(dbName = "cryptocompare_histoMinute", histoFunc=rData$cryptoCompare$API$histoMinute)
+#rData <- init_rData()
+#rData$cryptoCompare$refreshDb()
+#rData$cryptoCompare$initDb(dbName = "cryptocompare_histoMinute", histoFunc=rData$cryptoCompare$API$histoMinute)
 #cryptoCompare <- initCryptoCompare()
 #cryptoCompare$initDb()
 # cryptoCompare$refreshDb()
