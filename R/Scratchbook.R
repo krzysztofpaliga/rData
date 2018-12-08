@@ -20,8 +20,7 @@
 # asFrame <- do.call("rbind.fill", lapply(response$content$parsed$Data, function(x) as.data.frame(x, stringsAsFactors = FALSE)))
 # data <- DBI::dbWriteTable(con, "cryptocompare_coinList", asFrame)
 # asFrame$Nam
-#
-# cryptoCompare <- initCryptoCompare()
+# <-
 # cryptoCompare$refreshCoinInDb()
 # response2 <- cryptoCompare$getAllHisto(cryptoCompare$API$histoDay, exchange="Cryptopia", currency="BTC")
 # response3 <- cryptoCompare$getAllCoinsHisto(cryptoCompare$API$histoDay, exchange="Cryptopia", currency="BTC")
@@ -70,8 +69,11 @@
 # data <- DBI::dbWriteTable(con, "cryptocompare_coinList", asFrame)
 # asFrame$Nam
 #
-# cryptoCompare <- initCryptoCompare()
-# cryptoCompare$initDb()
+rData <- init_rData()
+rData$cryptoCompare$refreshDb()
+rData$cryptoCompare$initDb(dbName = "cryptocompare_histoMinute", histoFunc=rData$cryptoCompare$API$histoMinute)
+#cryptoCompare <- initCryptoCompare()
+#cryptoCompare$initDb()
 # cryptoCompare$refreshDb()
 # cryptoCompare$refreshCoinInDb(coin="ETH")
 # response2 <- cryptoCompare$getAllHisto(cryptoCompare$API$histoDay, exchange="Cryptopia", currency="BTC")
@@ -82,3 +84,4 @@
 # markets <- cryptoCompare$getMarkets(exchangesFilter = c("Cryptopia"), currenciesFilter = c("BTC"))
 # rData <- init_rData()
 # rData$cryptoCompare$refreshDb()
+

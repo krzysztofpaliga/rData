@@ -55,7 +55,6 @@ initCryptoCompare <- function() {
         nextDf <- nextResponse$content$parsed$Data
         df <- rbind(df, nextDf)
       }
-      Sys.sleep(1)
     }
 
     df <- df[ rowSums(df[,2:7])!=0, ]
@@ -96,7 +95,6 @@ initCryptoCompare <- function() {
         } else {
           df <- rbind(df, nextDf)
         }
-        Sys.sleep(1)
       }
     }
     df %>% filter(time > exclusiveFromDate) -> df
@@ -182,7 +180,6 @@ initCryptoCompare <- function() {
       if (!is.null(coinDf)) {
         df <- rbind(df, coinDf)
       }
-      Sys.sleep(0.5)
     }
 
     return (df)
