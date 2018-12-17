@@ -101,16 +101,20 @@ initCryptoCompare <- function() {
     return (df)
   }
 
-  cryptoCompare$refreshDb <- function(odbcName = "cryptonoi.se", dbName = "cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay) {
+  cryptoCompare$refreshDb <- function(odbcName = "cryptonoi.se",
+                                      dbName = "cryptocompare_histoDay",
+                                      histoFunc = cryptoCompare$API$histoDay,
+                                      exchangesFilter = c("Cryptopia"),
+                                      currenciesFilter = c("BTC")) {
     #TODO get rid of hardcoded values
-    markets <- cryptoCompare$getMarkets(exchangesFilter = c("Cryptopia"), currenciesFilter = c("BTC"))
+    markets <- cryptoCompare$getMarkets(exchangesFilter = exchangesFilter, currenciesFilter = currenciesFilter)
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     data <- tbl(connection, dbName)
     #data %>% distinct(coin) %>% collect() %>% filter(coin %in% markets$coin) -> coins
-    filter(markets, coin %in% markets$coin) %>% arrange(coin) -> coins
-    for (i in 1:nrow(coins)) {
-      coin <- coins[i,]$coin
-      cryptoCompare$refreshCoinInDb(odbcName = odbcName, dbName = dbName, histoFunc = histoFunc, coin = coin, exchangesFilter = c("Cryptopia"), currenciesFilter = c("BTC"))
+    markets %>% arrange(coin) -> markets
+    for (i in 1:nrow(markets)) {
+      market <- markets[i,]
+      cryptoCompare$refreshCoinInDb(odbcName = odbcName, dbName = dbName, histoFunc = histoFunc, coin = market$coin, exchangesFilter = market$exchange, currenciesFilter = market$currency)
     }
   }
 
