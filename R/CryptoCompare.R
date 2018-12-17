@@ -189,14 +189,18 @@ initCryptoCompare <- function() {
     return (df)
   }
 
-  cryptoCompare$initDb <- function(odbcName="cryptonoi.se", dbName="cryptocompare_histoDay", histoFunc = cryptoCompare$API$histoDay) {
+  cryptoCompare$initDb <- function(odbcName="cryptonoi.se",
+                                   dbName="cryptocompare_histoDay",
+                                   histoFunc = cryptoCompare$API$histoDay,
+                                   exchange="Cryptopia",
+                                   currency="BTC") {
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     print("Dropping db")
     DBI::dbSendQuery(connection, paste0("DROP TABLE IF EXISTS ", dbName))
     print("Fetching data")
 
     # handle those harcoded values
-    response <- cryptoCompare$getAllCoinsHisto(histoFunc = histoFunc, exchange="Cryptopia", currency="BTC")
+    response <- cryptoCompare$getAllCoinsHisto(histoFunc = histoFunc, exchange = exchange, currency = currency)
     print("Writing data to db")
     con <- DBI::dbConnect(odbc::odbc(), odbcName)
     data <- DBI::dbWriteTable(con, dbName, response)
