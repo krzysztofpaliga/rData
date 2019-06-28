@@ -166,8 +166,8 @@ initCryptoCompare <- function() {
     }
   }
 
-  cryptoCompare$getAllCoinsHisto <- function(histoFunction, exchange = "Cryptopia", currency = "BTC", partialCallback = NULL) {
-    markets <- cryptoCompare$getMarkets(exchangesFilter = c(exchange), currenciesFilter = c(currency))
+  cryptoCompare$getAllCoinsHisto <- function(histoFunction, exchange = "Cryptopia", currency = "BTC", coins = c(NULL), partialCallback = NULL) {
+    markets <- cryptoCompare$getMarkets(exchangesFilter = c(exchange), currenciesFilter = c(currency), coins = coins)
     markets %>%
       arrange(coin) %>%
       select(coin) ->
@@ -189,11 +189,13 @@ initCryptoCompare <- function() {
     return (df)
   }
 
+
+
   cryptoCompare$initDb <- function(odbcName="cryptonoi.se",
                                    dbName="cryptocompare_histoDay",
                                    histoFunc = cryptoCompare$API$histoDay,
-                                   exchange="Cryptopia",
-                                   currency="BTC") {
+                                   exchange ="Cryptopia",
+                                   currency ="BTC") {
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     print("Dropping db")
     DBI::dbSendQuery(connection, paste0("DROP TABLE IF EXISTS ", dbName))
