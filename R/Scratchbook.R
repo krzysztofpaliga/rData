@@ -69,9 +69,9 @@
 # data <- DBI::dbWriteTable(con, "cryptocompare_coinList", asFrame)
 # asFrame$Nam
 #
-rData <- init_rData()
+#rData <- init_rData()
 #rData$cryptoCompare$refreshDb()
-rData$cryptoCompare$initDb(dbName = "binance_day", histoFunc=rData$cryptoCompare$API$histoDay,odbcName = "cryptocompare", exchange="Binance", currency="BTC" )
+#rData$cryptoCompare$initDb(dbName = "binance_day", histoFunc=rData$cryptoCompare$API$histoDay,odbcName = "cryptocompare", exchange="Binance", currency="BTC" )
 #cryptoCompare <- initCryptoCompare()
 #cryptoCompare$initDb()
 # cryptoCompare$refreshDb()
